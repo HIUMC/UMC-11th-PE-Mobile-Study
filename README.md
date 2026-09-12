@@ -74,13 +74,13 @@ git pull origin main
 자신의 닉네임으로 브랜치를 생성합니다.
 
 ```bash
-git branch 닉네임
+git checkout -b 닉네임
 ```
 
 예시
 
 ```bash
-git branch haechi
+git checkout -b haechi
 ```
 
 <br />
