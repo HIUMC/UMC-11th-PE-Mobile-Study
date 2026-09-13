@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+//급한대로 GPT..
+
 void main() {
   runApp(const MyApp());
 }
