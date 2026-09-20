@@ -9,4 +9,8 @@ abstract final class AppColors {
   static const black = Color(0xFF1C1B1F);
   static const gray = Color(0xFF79747E);
   static const lightGray = Color(0xFFF5F3F0);
+
+  // Validation 오류 색상
+  static const error = Color(0xFFD32F2F);
+  static const errorContainer = Color(0xFFFFE8E6);
 }
