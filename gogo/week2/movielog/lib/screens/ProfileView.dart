@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold 배경색은 Theme의 surface 컬러를 따라가도록 설정되어 있습니다.
+    // Scaffold 배경색은 Theme의 surface 컬러를 따라가도록 설정
     return Scaffold(
       appBar: AppBar(
         title: const Text('내 프로필'),
