@@ -7,6 +7,10 @@ abstract final class AppTheme {
   static final ThemeData light = ThemeData(
     useMaterial3: true,
 
+    // pubspec.yaml에 등록한 Manrope를
+    // 앱 전체의 기본 Font로 사용
+    fontFamily: 'Manrope',
+
     scaffoldBackgroundColor: AppColors.warmWhite,
 
     colorScheme: const ColorScheme.light(

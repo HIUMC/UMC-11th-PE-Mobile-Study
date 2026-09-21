@@ -33,12 +33,21 @@ class ProfileHeader extends StatelessWidget {
             border: Border.all(color: AppColors.violet, width: 1.5),
           ),
 
-          // 현재는 Asset이 없으므로 임시 아이콘 사용
-          child: const CircleAvatar(
-            radius: 56,
-            backgroundColor: AppColors.white,
+          // ClipOval:
+          // 사각형 이미지를 원 모양으로 잘라줌
+          child: ClipOval(
+            child: Image.asset(
+              // 실제 프로필 이미지 경로
+              'assets/images/profile/profile_movielog.jpg',
 
-            child: Icon(Icons.person, size: 60, color: AppColors.gray),
+              // Figma의 프로필 이미지 크기
+              width: 112,
+              height: 112,
+
+              // 원 영역을 이미지로 꽉 채움
+              // 일부 영역이 조금 잘릴 수 있음
+              fit: BoxFit.cover,
+            ),
           ),
         ),
 

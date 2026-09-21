@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 // 여러 화면에서 공통으로 사용할 AppBar
 
 // StatelessWidget:
@@ -80,9 +82,21 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: onBack == null
           ? null
           : IconButton(
-              icon: const Icon(Icons.arrow_back),
+              // ZIP에 들어 있는 arrow_back.svg 사용
+              icon: SvgPicture.asset(
+                'assets/icons/arrow_back.svg',
 
-              // 버튼을 눌렀을 때 전달받은 onBack 함수 실행
+                width: 24,
+                height: 24,
+
+                // SVG 색상을 앱의 검정색으로 변경
+                colorFilter: const ColorFilter.mode(
+                  AppColors.black,
+                  BlendMode.srcIn,
+                ),
+              ),
+
+              // 전달받은 뒤로가기 함수 실행
               onPressed: onBack,
             ),
 
