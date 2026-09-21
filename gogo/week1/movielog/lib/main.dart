@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'screens/ProfileView.dart';
 import 'theme/app_theme.dart';
 
+import 'screens/SignupView.dart'; 
+
 void main() {
   runApp(const MyApp());
 }
@@ -15,8 +17,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
 
-      // 지금은 프로필 화면 확인용
-      home: const ProfileView(),
+      // SignUpView -> SignupView 로 대소문자 수정
+      home: const SignupView(),
     );
   }
 }

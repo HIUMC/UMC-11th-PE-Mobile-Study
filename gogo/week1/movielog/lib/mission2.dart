@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 class Movie {
   const Movie({required this.id, required this.title});
 
