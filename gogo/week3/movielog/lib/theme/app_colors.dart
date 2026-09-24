@@ -7,6 +7,7 @@ class AppColors {
   static const background = Color(0xFFFAF9F5);
   static const divider = Color(0xFFE9E5ED);
   static const accent = Color(0xFFFFB547);
+  static const unratedStar = Color(0xFFE5E1EB);
   static const primaryTint = Color(0xFFF0ECF8);
   static const disabledButton = Color(0xFFCCC2DC);
   static const fieldFill = Color(0xFFF5F3F0);

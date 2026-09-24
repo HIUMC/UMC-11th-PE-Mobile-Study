@@ -5,7 +5,7 @@ class MovieStore extends ChangeNotifier {
 
   static final MovieStore instance = MovieStore._();
 
-  final Set<int> _favoriteIds = {1};
+  final Set<int> _favoriteIds = {};
   final Map<int, double> _userRatings = {};
 
   Set<int> get favoriteIds => Set.unmodifiable(_favoriteIds);

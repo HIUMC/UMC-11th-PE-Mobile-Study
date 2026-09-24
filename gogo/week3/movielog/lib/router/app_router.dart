@@ -46,17 +46,6 @@ class AppRouter {
                         : rawGenres.split(','),
                   );
                 },
-                routes: [
-                  GoRoute(
-                    path: ':movieId',
-                    builder: (context, state) {
-                      final id = int.tryParse(
-                        state.pathParameters['movieId'] ?? '',
-                      );
-                      return MovieDetailScreen(movie: findMovieById(id));
-                    },
-                  ),
-                ],
               ),
             ],
           ),
@@ -69,6 +58,13 @@ class AppRouter {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/movies/:movieId',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['movieId'] ?? '');
+          return MovieDetailScreen(movie: findMovieById(id));
+        },
       ),
     ],
   );

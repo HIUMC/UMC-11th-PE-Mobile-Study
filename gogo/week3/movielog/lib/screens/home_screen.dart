@@ -13,81 +13,91 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final featured = mockMovies.first;
+    final popular = mockMovies.skip(1).take(3).toList();
+    final width = MediaQuery.sizeOf(context).width;
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+          padding: const EdgeInsets.fromLTRB(20, 8, 14, 24),
           children: [
             Row(
               children: [
-                SvgPicture.asset(
-                  'assets/logos/movielog_logo.svg',
-                  width: 36,
-                  height: 36,
-                  semanticsLabel: 'MovieLog 로고',
-                ),
-                const SizedBox(width: 10),
                 Text(
                   'MovieLog',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 22,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
+                    letterSpacing: -0.6,
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  tooltip: '영화 찾기',
+                  tooltip: '영화 검색',
                   onPressed: () => context.go('/movies'),
                   icon: SvgPicture.asset(
                     'assets/icons/search.svg',
-                    width: 23,
-                    height: 23,
+                    width: 22,
+                    height: 22,
                     colorFilter: const ColorFilter.mode(
-                      AppColors.textPrimary,
+                      AppColors.primary,
                       BlendMode.srcIn,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 19),
             Text(
-              '오늘의 영화 기록',
-              style: Theme.of(context).textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.7),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '마음에 남은 장면을 놓치지 않도록',
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 22),
-            _FeaturedMovie(movie: featured),
-            const SizedBox(height: 30),
-            _SectionHeading(
-              title: '지금 주목할 영화',
-              actionLabel: '전체보기',
-              onAction: () => context.go('/movies'),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              height: 284,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: mockMovies.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 14),
-                itemBuilder: (context, index) =>
-                    MovieCard(movie: mockMovies[index], width: 148),
+              '오늘은 어떤\n영화를 볼까요?',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: AppColors.textPrimary,
+                fontSize: 30,
+                height: 1.15,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -1.1,
               ),
             ),
-            const SizedBox(height: 24),
-            _QuickAction(
-              icon: Icons.bookmark_outline_rounded,
-              title: '내가 찜한 영화',
-              subtitle: '다시 보고 싶은 작품을 모아두세요.',
-              onTap: () => context.go('/my'),
+            const SizedBox(height: 18),
+            _FeaturedMovie(movie: featured, height: width * 1.34),
+            const SizedBox(height: 25),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '인기 영화',
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontSize: 22, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.go('/movies'),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('전체보기'),
+                      SizedBox(width: 2),
+                      Icon(Icons.chevron_right_rounded, size: 18),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 276,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: popular.length,
+                separatorBuilder: (context, index) => const SizedBox(width: 18),
+                itemBuilder: (context, index) => MovieCard(
+                  movie: popular[index],
+                  width: 145,
+                  rank: index + 1,
+                  showRatingRow: true,
+                ),
+              ),
             ),
           ],
         ),
@@ -97,9 +107,10 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _FeaturedMovie extends StatelessWidget {
-  const _FeaturedMovie({required this.movie});
+  const _FeaturedMovie({required this.movie, required this.height});
 
   final Movie movie;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -107,9 +118,9 @@ class _FeaturedMovie extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => context.push('/movies/${movie.id}'),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: SizedBox(
-          height: 252,
+          height: height,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -119,88 +130,75 @@ class _FeaturedMovie extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0x00120D1A), Color(0xCC120D1A)],
+                    stops: [0.25, 0.62, 1],
+                    colors: [
+                      Color(0x00110F19),
+                      Color(0x44110F19),
+                      Color(0xEE08090D),
+                    ],
                   ),
                 ),
               ),
               Positioned(
-                top: 16,
-                left: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    '이번 주 추천',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 18,
-                right: 18,
-                bottom: 17,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                left: 23,
+                right: 23,
+                bottom: 22,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${movie.genre} · ${movie.year}',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 13,
+                          vertical: 7,
+                        ),
+                        child: Text(
+                          '추천 신작',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
-                          const SizedBox(height: 5),
-                          Text(
-                            movie.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                          const SizedBox(height: 7),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.star_rounded,
-                                size: 17,
-                                color: AppColors.accent,
-                              ),
-                              const SizedBox(width: 3),
-                              Text(
-                                movie.rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Colors.white,
+                    const SizedBox(height: 10),
+                    Text(
+                      movie.title,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            color: Colors.white,
+                            fontSize: 29,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.8,
+                          ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '로맨스 · 드라마 · ${movie.runtime}분',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: () => context.push('/movies/${movie.id}'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: const StadiumBorder(),
+                        ),
+                        icon: const Icon(Icons.info_rounded, size: 17),
+                        label: const Text('상세보기'),
+                      ),
                     ),
                   ],
                 ),
@@ -208,66 +206,6 @@ class _FeaturedMovie extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({
-    required this.title,
-    required this.actionLabel,
-    required this.onAction,
-  });
-
-  final String title;
-  final String actionLabel;
-  final VoidCallback onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.4),
-          ),
-        ),
-        TextButton(onPressed: onAction, child: Text(actionLabel)),
-      ],
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  const _QuickAction({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primaryTint,
-          foregroundColor: AppColors.primary,
-          child: Icon(icon),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right_rounded),
-        onTap: onTap,
       ),
     );
   }

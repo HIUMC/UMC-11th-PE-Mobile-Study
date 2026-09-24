@@ -6,6 +6,16 @@ import '../models/movie.dart';
 import '../theme/app_colors.dart';
 import '../widgets/movie_card.dart';
 
+const _movieGenres = <String>[
+  '드라마',
+  'SF',
+  '애니메이션',
+  '스릴러',
+  '액션',
+  '로맨스',
+  '다큐멘터리',
+];
+
 class MovieListScreen extends StatefulWidget {
   const MovieListScreen({
     super.key,
@@ -23,15 +33,14 @@ class MovieListScreen extends StatefulWidget {
 class _MovieListScreenState extends State<MovieListScreen> {
   late final TextEditingController _searchController;
   late Set<String> _selectedGenres;
-
-  List<String> get _genres =>
-      mockMovies.map((movie) => movie.genre).toSet().toList();
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery);
     _selectedGenres = widget.initialGenres.toSet();
+    _isSearching = widget.initialQuery.isNotEmpty;
   }
 
   @override
@@ -43,6 +52,7 @@ class _MovieListScreenState extends State<MovieListScreen> {
         text: widget.initialQuery,
         selection: TextSelection.collapsed(offset: widget.initialQuery.length),
       );
+      _isSearching = widget.initialQuery.isNotEmpty;
     }
     if (oldWidget.initialGenres.join(',') != widget.initialGenres.join(',')) {
       _selectedGenres = widget.initialGenres.toSet();
@@ -65,7 +75,7 @@ class _MovieListScreenState extends State<MovieListScreen> {
       final matchesGenre =
           _selectedGenres.isEmpty || _selectedGenres.contains(movie.genre);
       return matchesQuery && matchesGenre;
-    }).toList()..sort((left, right) => right.rating.compareTo(left.rating));
+    }).toList();
   }
 
   void _syncRoute() {
@@ -82,68 +92,68 @@ class _MovieListScreenState extends State<MovieListScreen> {
     context.go(location);
   }
 
-  Future<void> _openGenreFilter() async {
-    final selected = await showModalBottomSheet<List<String>>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) =>
-          GenreFilterSheet(genres: _genres, selectedGenres: _selectedGenres),
-    );
-    if (selected == null || !mounted) return;
-    setState(() => _selectedGenres = selected.toSet());
-    _syncRoute();
-  }
-
   @override
   Widget build(BuildContext context) {
     final movies = _filteredMovies;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('영화'),
+        titleSpacing: 20,
+        centerTitle: false,
+        title: Text(
+          '영화',
+          style: Theme.of(context).textTheme.titleLarge
+              ?.copyWith(color: AppColors.primary, fontWeight: FontWeight.w700),
+        ),
         actions: [
           IconButton(
-            tooltip: '장르 필터',
-            onPressed: _openGenreFilter,
-            icon: Badge(
-              isLabelVisible: _selectedGenres.isNotEmpty,
-              label: Text('${_selectedGenres.length}'),
-              child: const Icon(Icons.tune_rounded),
+            tooltip: _isSearching ? '검색 닫기' : '영화 검색',
+            onPressed: () {
+              setState(() => _isSearching = !_isSearching);
+              if (!_isSearching) {
+                _searchController.clear();
+                _syncRoute();
+              }
+            },
+            icon: const Icon(
+              Icons.search_rounded,
+              color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
         ],
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
-            child: TextField(
-              controller: _searchController,
-              textInputAction: TextInputAction.search,
-              onChanged: (_) => setState(() {}),
-              onSubmitted: (_) => _syncRoute(),
-              decoration: InputDecoration(
-                hintText: '영화 제목이나 장르를 검색해보세요',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchController.text.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: '검색어 지우기',
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {});
-                          _syncRoute();
-                        },
-                        icon: const Icon(Icons.close_rounded),
-                      ),
+          if (_isSearching)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                onChanged: (_) => setState(() {}),
+                onSubmitted: (_) => _syncRoute(),
+                decoration: InputDecoration(
+                  hintText: '영화 제목 검색',
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _searchController.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: '검색어 지우기',
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {});
+                            _syncRoute();
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                ),
               ),
             ),
-          ),
           SizedBox(
-            height: 42,
+            height: 48,
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               scrollDirection: Axis.horizontal,
@@ -156,7 +166,7 @@ class _MovieListScreenState extends State<MovieListScreen> {
                     _syncRoute();
                   },
                 ),
-                ..._genres.map(
+                ..._movieGenres.map(
                   (genre) => Padding(
                     padding: const EdgeInsets.only(left: 8),
                     child: _GenreChip(
@@ -176,30 +186,7 @@ class _MovieListScreenState extends State<MovieListScreen> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-            child: Row(
-              children: [
-                Text(
-                  '전체 영화',
-                  style: Theme.of(context).textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${movies.length}',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const Spacer(),
-                const Icon(Icons.swap_vert_rounded, size: 18),
-                const SizedBox(width: 4),
-                Text('평점순', style: Theme.of(context).textTheme.labelMedium),
-              ],
-            ),
-          ),
+          const SizedBox(height: 11),
           Expanded(
             child: movies.isEmpty
                 ? const _EmptyMovies()
@@ -209,12 +196,15 @@ class _MovieListScreenState extends State<MovieListScreen> {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          crossAxisSpacing: 14,
-                          mainAxisSpacing: 18,
-                          childAspectRatio: 0.62,
+                          crossAxisSpacing: 18,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: 0.57,
                         ),
-                    itemBuilder: (context, index) =>
-                        MovieCard(movie: movies[index]),
+                    itemBuilder: (context, index) => MovieCard(
+                      movie: movies[index],
+                      showScoreBadge: true,
+                      showMetadata: true,
+                    ),
                   ),
           ),
         ],
@@ -246,10 +236,10 @@ class _GenreChip extends StatelessWidget {
         fontSize: 13,
       ),
       selectedColor: AppColors.primary,
-      backgroundColor: AppColors.cardSurface,
-      side: BorderSide(color: selected ? AppColors.primary : AppColors.divider),
+      backgroundColor: AppColors.primaryTint,
+      side: BorderSide.none,
       showCheckmark: false,
-      padding: const EdgeInsets.symmetric(horizontal: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 9),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
     );
   }
@@ -285,111 +275,6 @@ class _EmptyMovies extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class GenreFilterSheet extends StatefulWidget {
-  const GenreFilterSheet({
-    super.key,
-    required this.genres,
-    required this.selectedGenres,
-  });
-
-  final List<String> genres;
-  final Set<String> selectedGenres;
-
-  @override
-  State<GenreFilterSheet> createState() => _GenreFilterSheetState();
-}
-
-class _GenreFilterSheetState extends State<GenreFilterSheet> {
-  late final Set<String> _selection = {...widget.selectedGenres};
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.65,
-      minChildSize: 0.42,
-      maxChildSize: 0.9,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 10),
-              Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 12, 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '장르 필터',
-                        style: Theme.of(context).textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(_selection.clear),
-                      child: const Text('초기화'),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  controller: scrollController,
-                  itemCount: widget.genres.length,
-                  itemBuilder: (context, index) {
-                    final genre = widget.genres[index];
-                    return CheckboxListTile(
-                      value: _selection.contains(genre),
-                      onChanged: (value) {
-                        setState(() {
-                          if (value == true) {
-                            _selection.add(genre);
-                          } else {
-                            _selection.remove(genre);
-                          }
-                        });
-                      },
-                      title: Text(genre),
-                      activeColor: AppColors.primary,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () =>
-                        Navigator.of(context).pop(_selection.toList()),
-                    child: const Text('영화 보기'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

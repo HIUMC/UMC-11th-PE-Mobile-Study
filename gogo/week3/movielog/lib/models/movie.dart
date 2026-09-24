@@ -9,6 +9,9 @@ class Movie {
     required this.synopsis,
     required this.director,
     required this.runtime,
+    this.detailGenre,
+    this.ratingCount = 0,
+    this.tags = const <String>[],
   });
 
   final int id;
@@ -20,4 +23,7 @@ class Movie {
   final String synopsis;
   final String director;
   final int runtime;
+  final String? detailGenre;
+  final int ratingCount;
+  final List<String> tags;
 }

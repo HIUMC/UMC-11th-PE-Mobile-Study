@@ -1,27 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../data/movie_store.dart';
 import '../models/movie.dart';
 import '../theme/app_colors.dart';
-import 'movie_rating_input.dart';
 
 class MovieCard extends StatelessWidget {
   const MovieCard({
     super.key,
     required this.movie,
     this.width,
-    this.showFavoriteButton = true,
+    this.rank,
+    this.showScoreBadge = false,
+    this.showMetadata = false,
+    this.showRatingRow = false,
   });
 
   final Movie movie;
   final double? width;
-  final bool showFavoriteButton;
+  final int? rank;
+  final bool showScoreBadge;
+  final bool showMetadata;
+  final bool showRatingRow;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final store = MovieStore.instance;
 
     return SizedBox(
       width: width,
@@ -32,9 +35,9 @@ class MovieCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AspectRatio(
-              aspectRatio: 0.72,
+              aspectRatio: 0.69,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -47,44 +50,18 @@ class MovieCard extends StatelessWidget {
                             child: Icon(Icons.movie_outlined, size: 42),
                           ),
                     ),
-                    if (showFavoriteButton)
+                    if (rank != null)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: _OverlayLabel(label: '$rank'),
+                      ),
+                    if (showScoreBadge && movie.id != 6)
                       Positioned(
                         top: 8,
                         right: 8,
-                        child: AnimatedBuilder(
-                          animation: store,
-                          builder: (context, child) {
-                            final isFavorite = store.isFavorite(movie.id);
-                            return Material(
-                              color: Colors.black.withValues(alpha: 0.38),
-                              shape: const CircleBorder(),
-                              child: IconButton(
-                                tooltip: isFavorite ? '즐겨찾기 해제' : '즐겨찾기',
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () {
-                                  store.toggleFavorite(movie.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        isFavorite
-                                            ? '즐겨찾기에서 삭제했어요.'
-                                            : '즐겨찾기에 추가했어요.',
-                                      ),
-                                      behavior: SnackBarBehavior.floating,
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                                icon: Icon(
-                                  isFavorite
-                                      ? Icons.bookmark_rounded
-                                      : Icons.bookmark_border_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            );
-                          },
+                        child: _OverlayLabel(
+                          label: '★ ${movie.rating.toStringAsFixed(1)}',
                         ),
                       ),
                   ],
@@ -99,23 +76,67 @@ class MovieCard extends StatelessWidget {
               style: textTheme.titleSmall?.copyWith(
                 color: AppColors.textPrimary,
                 fontWeight: FontWeight.w700,
+                fontSize: 16,
               ),
             ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                MovieRatingIndicator(rating: movie.rating, itemSize: 14),
-                const SizedBox(width: 4),
-                Text(
-                  movie.rating.toStringAsFixed(1),
-                  style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
+            if (showMetadata) ...[
+              const SizedBox(height: 3),
+              Text(
+                '${movie.year} · ${movie.genre}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppColors.hint,
+                  fontSize: 13,
                 ),
-              ],
-            ),
+              ),
+            ],
+            if (showRatingRow) ...[
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.star_rounded,
+                    size: 15,
+                    color: AppColors.accent,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    (movie.rating * 2).toStringAsFixed(1),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OverlayLabel extends StatelessWidget {
+  const _OverlayLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xCC33343A),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

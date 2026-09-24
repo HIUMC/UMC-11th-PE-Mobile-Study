@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
+import '../theme/app_colors.dart';
+
 class MovieRatingInput extends StatelessWidget {
   const MovieRatingInput({
     super.key,
@@ -22,8 +24,9 @@ class MovieRatingInput extends StatelessWidget {
       itemCount: 5,
       itemSize: itemSize,
       itemPadding: const EdgeInsets.symmetric(horizontal: 2),
+      unratedColor: AppColors.unratedStar,
       itemBuilder: (context, index) =>
-          const Icon(Icons.star_rounded, color: Color(0xFFFFB547)),
+          const Icon(Icons.star_rounded, color: AppColors.primary),
       onRatingUpdate: onChanged,
     );
   }
@@ -45,8 +48,9 @@ class MovieRatingIndicator extends StatelessWidget {
       rating: rating,
       itemCount: 5,
       itemSize: itemSize,
+      unratedColor: AppColors.unratedStar,
       itemBuilder: (context, index) =>
-          const Icon(Icons.star_rounded, color: Color(0xFFFFB547)),
+          const Icon(Icons.star_rounded, color: AppColors.primary),
     );
   }
 }
