@@ -1,4 +1,4 @@
-import 'package:go_router/go_router.dart'; // GoRouter, GoRoute, ShellRoute 사용 가능
+import 'package:go_router/go_router.dart'; // GoRouter, GoRoute, StatefulShellRoute 사용 가능
 
 import '../home_screen.dart'; // router 폴더 안이라 ../로 lib까지 한 칸 올라가서 찾음
 import '../main_screen.dart';
@@ -22,41 +22,45 @@ class AppRouter { // 앱의 주소록. 어떤 주소일 때 어떤 화면을 보
         path: '/register', // 경로 이름은 워크북대로, 화면은 SignUpScreen 사용
         builder: (context, state) => const SignUpScreen(),
       ),
-      ShellRoute( // 안쪽 routes들을 공통 액자(MainScreen)로 감쌈. 탭을 바꿔도 NavigationBar는 그대로고 child만 바뀜
-        builder: (context, state, child) { // GoRoute와 달리 child를 하나 더 받음. 현재 주소에 해당하는 안쪽 화면
-          return MainScreen(
-            currentIndex: indexFromLocation(state.uri.path), // 현재 주소로 선택된 탭 번호를 계산
-            child: child,
-          );
+      StatefulShellRoute.indexedStack( // 탭마다 Navigator를 따로 두고, 안 보이는 탭도 살려둠. 탭을 바꿔도 필터와 스크롤이 유지됨
+        builder: (context, state, navigationShell) { // child 대신 navigationShell을 받음. 탭 전부와 현재 탭 정보를 들고 있음
+          return MainScreen(navigationShell: navigationShell);
         },
-        routes: [ // 이 주소들은 액자 안에 그려짐. 하단바가 보임
-          GoRoute(
-            path: '/home',
-            builder: (context, state) => const HomeScreen(),
+        branches: [ // 탭 하나당 Branch 하나. 순서가 NavigationBar의 index 0, 1, 2
+          StatefulShellBranch( // 홈 탭
+            routes: [
+              GoRoute(
+                path: '/home',
+                builder: (context, state) => const HomeScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/movies',
-            builder: (context, state) => const MovieListScreen(),
+          StatefulShellBranch( // 영화 탭
+            routes: [
+              GoRoute(
+                path: '/movies', // Query Parameter는 path에 따로 선언하지 않음. ?genre=가 붙어도 이 Route로 들어옴
+                builder: (context, state) => MovieListScreen( // 주소마다 값이 달라서 const 불가
+                  selectedGenres: state.uri.queryParametersAll['genre'] ?? const <String>[], // 같은 키(genre)로 반복된 값을 전부 리스트로 꺼냄. 없으면 빈 리스트(전체)
+                ),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/my',
-            builder: (context, state) => const ProfileScreen(), // 마이페이지 Figma가 1주차 프로필 화면과 같은 구성이라 그대로 재사용
+          StatefulShellBranch( // 마이 탭
+            routes: [
+              GoRoute(
+                path: '/my',
+                builder: (context, state) => const ProfileScreen(), // 마이페이지 Figma가 1주차 프로필 화면과 같은 구성이라 그대로 재사용
+              ),
+            ],
           ),
         ],
       ),
       GoRoute(
-        path: '/movies/:movieId', // :movieId는 빈칸. /movies/1처럼 실제 값이 채워져서 들어옴. Figma 상세에 하단바가 없어서 ShellRoute 밖에 둠
+        path: '/movies/:movieId', // :movieId는 빈칸. /movies/1처럼 실제 값이 채워져서 들어옴. Figma 상세에 하단바가 없어서 Shell 밖에 둠
         builder: (context, state) => MovieDetailScreen( // 주소마다 값이 달라서 const 불가
           movieId: state.pathParameters['movieId']!, // 빈칸 이름(:movieId)과 같은 키로 꺼냄. 이 Route에 들어왔으면 값이 항상 있어서 !로 null이 아님을 보장
         ),
       ),
     ],
   );
-
-  static int indexFromLocation(String path) { // 주소를 보고 몇 번째 탭인지 계산. 탭 바를 안 누르고 이동해도(전체보기 등) 불이 맞게 켜짐
-    if (path.startsWith('/movies')) return 1; // ==가 아니라 startsWith. /movies로 시작하면 영화 탭
-    if (path.startsWith('/my')) return 2;
-
-    return 0; // 나머지는 홈 탭
-  }
 }

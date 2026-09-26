@@ -1,25 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // context.go 사용 가능
 
 import 'data/movies.dart'; // Mock 영화 목록
 import 'theme/app_colors.dart';
 import 'theme/app_text_styles.dart';
+import 'widgets/genre_filter_sheet.dart';
 import 'widgets/movie_card.dart';
 
-class MovieListScreen extends StatefulWidget { // 선택한 장르에 따라 화면이 바뀌어야 해서 StatefulWidget
-  const MovieListScreen({super.key});
+class MovieListScreen extends StatelessWidget { // 선택한 장르를 State가 아니라 주소(Query Parameter)가 기억해서 StatelessWidget
+  const MovieListScreen({super.key, required this.selectedGenres}); // 필수. router가 주소에서 꺼내서 넘겨줌
 
-  @override
-  State<MovieListScreen> createState() => _MovieListScreenState();
-}
+  final List<String> selectedGenres; // 적용된 장르들. 주소가 /movies?genre=드라마&genre=SF면 ['드라마', 'SF'], /movies면 빈 리스트
 
-class _MovieListScreenState extends State<MovieListScreen> {
-  String selectedGenre = '전체'; // 지금 선택된 장르. Chip 목록과 GridView가 둘 다 알아야 해서 공통 부모가 들고 있음. 값이 바뀌어서 final이 아님
+  Future<void> openFilterSheet(BuildContext context) async { // 필터 시트를 열고, 확인하면 주소를 바꿈. 시트가 닫힐 때까지 기다려야 해서 async
+    final result = await showModalBottomSheet<List<String>>( // 시트를 띄우고 닫힐 때까지 기다림. <List<String>>은 돌려받을 값의 타입
+      context: context,
+      isScrollControlled: true, // 기본값이면 시트가 화면 절반 남짓까지만 커짐. true여야 0.9까지 끌어올릴 수 있음
+      useSafeArea: true, // 시트를 끝까지 올려도 상단 상태바(시계, 배터리)를 침범하지 않음
+      builder: (sheetContext) => GenreFilterSheet(initialGenres: selectedGenres), // 지금 적용된 장르를 넘겨서 체크된 채로 열림
+    );
+
+    if (result == null) return; // 확인 대신 아래로 내리거나 바깥을 눌러 닫으면 null. 그땐 필터를 안 바꿈
+    if (!context.mounted) return; // 기다리는 사이 화면이 사라졌으면 context를 쓰면 안 돼서 멈춤. 없으면 analyze 경고
+
+    final location = Uri( // 주소를 직접 이어 붙이지 않고 Uri로 조립. 한글이나 특수문자를 주소에 쓸 수 있는 형태로 알아서 바꿔줌
+      path: '/movies',
+      queryParameters: result.isEmpty ? null : {'genre': result}, // 아무것도 안 고르면 Query 없이 전체. 리스트를 넣으면 ?genre=드라마&genre=SF처럼 같은 키를 반복
+    ).toString();
+
+    context.go(location); // 위에 쌓지 않고 주소만 바꿈. router가 새 주소로 화면을 다시 그림
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filteredMovies = selectedGenre == '전체' // 전체면 모든 영화, 아니면 장르가 같은 영화만
+    final filteredMovies = selectedGenres.isEmpty // 고른 게 없으면 모든 영화, 있으면 고른 장르 중 하나에 해당하는 영화만
         ? movies
-        : movies.where((movie) => movie.genre == selectedGenre).toList(); // where는 조건에 맞는 것만 걸러냄. 결과가 Iterable이라 toList로 List로 바꿈
+        : movies.where((movie) => selectedGenres.contains(movie.genre)).toList(); // contains는 리스트 안에 그 값이 있는지 확인
 
     return Scaffold(
       appBar: AppBar(
@@ -29,66 +45,13 @@ class _MovieListScreenState extends State<MovieListScreen> {
             icon: const Icon(Icons.search, color: AppColors.violet),
             onPressed: () {}, // 검색은 요구사항에 없어서 Figma대로 모양만 둠
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          GenreChipList(
-            selectedGenre: selectedGenre, // 현재 선택된 장르를 넘겨줌
-            onSelected: (genre) { // Chip이 눌리면 실행됨. 누른 장르가 genre로 들어옴
-              setState(() {
-                selectedGenre = genre; // 값을 바꾸고 다시 그리라고 알림. Chip과 GridView가 같이 바뀜
-              });
-            },
+          IconButton(
+            icon: const Icon(Icons.filter, color: AppColors.violet), // 워크북에 적힌 아이콘
+            onPressed: () => openFilterSheet(context),
           ),
-          Expanded(child: MovieGrid(movieList: filteredMovies)), // GridView는 세로로 끝까지 늘어나려 해서 Column 안에서는 Expanded로 남은 공간만 쓰게 함. 없으면 무한 높이 에러
         ],
       ),
-    );
-  }
-}
-
-class GenreChipList extends StatelessWidget { // 상단 장르 Chip 가로 목록. 선택 상태는 부모에게 받고, 눌리면 부모에게 알리기만 함
-  const GenreChipList({
-    super.key,
-    required this.selectedGenre,
-    required this.onSelected,
-  });
-
-  static const genres = ['전체', '드라마', 'SF', '애니메이션', '스릴러', '로맨스', '액션']; // Mock 영화의 장르 + 전체. Figma 순서대로
-
-  final String selectedGenre;
-  final ValueChanged<String> onSelected; // void Function(String)의 별칭. 누른 장르 이름을 들고 부모에게 알림
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48, // 가로 ListView는 높이를 스스로 못 정해서 직접 지정. Chip의 터치 영역 높이
-      child: ListView.separated( // 항목 사이에만 간격을 넣는 ListView
-        scrollDirection: Axis.horizontal, // 화면 폭보다 Chip이 많아서 가로 스크롤
-        padding: const EdgeInsets.symmetric(horizontal: 16), // 첫 Chip과 마지막 Chip이 화면 끝에 붙지 않게
-        itemCount: genres.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8), // Chip 사이 간격
-        itemBuilder: (context, index) {
-          final genre = genres[index];
-          final isSelected = genre == selectedGenre; // 부모가 넘겨준 선택 장르와 같으면 선택된 Chip
-
-          return ChoiceChip( // 여러 개 중 하나를 고르는 Chip. selected로 선택 상태를 가짐
-            label: Text(genre),
-            selected: isSelected,
-            onSelected: (_) => onSelected(genre), // 이 Chip의 장르를 부모에게 넘김. (_)는 ChoiceChip이 주는 bool 값을 안 쓴다는 표시
-            showCheckmark: false, // Material 3 기본값은 선택 시 체크 표시. Figma에 없어서 끔
-            selectedColor: AppColors.violet, // 선택됐을 때 배경
-            backgroundColor: AppColors.fieldFill, // 선택 안 됐을 때 배경
-            labelStyle: AppTextStyles.bodySmall.copyWith(
-              color: isSelected ? AppColors.white : AppColors.black, // 선택되면 흰 글자, 아니면 검정 글자
-              fontWeight: FontWeight.w700,
-            ),
-            side: BorderSide.none, // 테두리 없음
-            shape: const StadiumBorder(), // 양 끝이 완전히 둥근 알약 모양
-          );
-        },
-      ),
+      body: MovieGrid(movieList: filteredMovies), // Chip 줄이 없어져서 Column과 Expanded 없이 GridView만 body에 둠
     );
   }
 }
