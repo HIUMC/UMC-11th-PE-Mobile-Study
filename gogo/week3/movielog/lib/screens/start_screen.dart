@@ -63,14 +63,9 @@ class StartScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 54,
                 child: FilledButton(
-                  onPressed: () => context.pushReplacement('/home'),
+                  onPressed: () => context.pushReplacement('/register'),
                   child: const Text('MovieLog 시작하기'),
                 ),
-              ),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () => context.push('/register'),
-                child: const Text('회원가입'),
               ),
             ],
           ),

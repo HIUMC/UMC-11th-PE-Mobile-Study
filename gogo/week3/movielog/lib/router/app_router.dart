@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/mock_movies.dart';
@@ -13,7 +14,7 @@ class AppRouter {
   AppRouter._();
 
   static final router = GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/start',
     routes: [
       GoRoute(path: '/start', builder: (context, state) => const StartScreen()),
       GoRoute(
@@ -29,7 +30,8 @@ class AppRouter {
             routes: [
               GoRoute(
                 path: '/home',
-                builder: (context, state) => const HomeScreen(),
+                builder: (context, state) =>
+                    const PopScope(canPop: false, child: HomeScreen()),
               ),
             ],
           ),

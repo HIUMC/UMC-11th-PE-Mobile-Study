@@ -56,7 +56,7 @@ class MovieCard extends StatelessWidget {
                         left: 8,
                         child: _OverlayLabel(label: '$rank'),
                       ),
-                    if (showScoreBadge && movie.id != 6)
+                    if (showScoreBadge)
                       Positioned(
                         top: 8,
                         right: 8,
@@ -102,7 +102,7 @@ class MovieCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 3),
                   Text(
-                    (movie.rating * 2).toStringAsFixed(1),
+                    movie.rating.toStringAsFixed(1),
                     style: textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
                       fontSize: 13,

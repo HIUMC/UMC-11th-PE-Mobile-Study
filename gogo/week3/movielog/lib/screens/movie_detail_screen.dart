@@ -6,6 +6,7 @@ import '../data/movie_store.dart';
 import '../models/movie.dart';
 import '../theme/app_colors.dart';
 import '../widgets/movie_rating_input.dart';
+import '../widgets/rating_dialog.dart';
 
 class MovieDetailScreen extends StatefulWidget {
   const MovieDetailScreen({super.key, required this.movie});
@@ -17,37 +18,46 @@ class MovieDetailScreen extends StatefulWidget {
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
+  void _goBack() {
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    context.canPop() ? context.pop() : context.go('/movies');
+  }
+
   Future<void> _openRatingDialog(Movie movie) async {
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
     final previousRating = MovieStore.instance.ratingFor(movie.id);
     final rating = await showDialog<double>(
       context: context,
       builder: (context) => RatingDialog(
         movieTitle: movie.title,
-        initialRating: previousRating ?? 3.5,
-        isRerating: previousRating != null,
+        initialRating: previousRating ?? 0,
       ),
     );
     if (rating == null || !mounted) return;
 
     MovieStore.instance.saveRating(movie.id, rating);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('내 평점 ${rating.toStringAsFixed(1)}점을 기록했어요.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('내 평점 ${rating.toStringAsFixed(1)}점을 기록했어요.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   void _toggleFavorite(Movie movie) {
     final store = MovieStore.instance;
     final wasFavorite = store.isFavorite(movie.id);
     store.toggleFavorite(movie.id);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(wasFavorite ? '즐겨찾기에서 삭제했어요.' : '즐겨찾기에 추가했어요.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(wasFavorite ? '즐겨찾기에서 삭제했어요.' : '즐겨찾기에 추가했어요.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
   }
 
   @override
@@ -58,8 +68,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         appBar: AppBar(
           title: const Text('Cinema Archive'),
           leading: IconButton(
-            onPressed: () =>
-                context.canPop() ? context.pop() : context.go('/movies'),
+            onPressed: _goBack,
             icon: const Icon(Icons.arrow_back_rounded),
           ),
         ),
@@ -83,8 +92,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         ),
         leading: IconButton(
           tooltip: '뒤로 가기',
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/movies'),
+          onPressed: _goBack,
           icon: const Icon(
             Icons.arrow_back_rounded,
             color: AppColors.primary,
@@ -94,12 +102,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
         actions: [
           IconButton(
             tooltip: '공유',
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('공유 기능은 준비 중이에요.'),
-                behavior: SnackBarBehavior.floating,
+            onPressed: () => ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                const SnackBar(
+                  content: Text('공유 기능은 준비 중이에요.'),
+                  behavior: SnackBarBehavior.floating,
+                ),
               ),
-            ),
             icon: SvgPicture.asset(
               'assets/icons/share.svg',
               width: 18,
@@ -113,6 +123,58 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           const SizedBox(width: 4),
         ],
       ),
+      bottomNavigationBar: AnimatedBuilder(
+        animation: store,
+        builder: (context, child) {
+          final userRating = store.ratingFor(movie.id);
+          return SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(17, 10, 17, 9),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _toggleFavorite(movie),
+                      icon: Icon(
+                        store.isFavorite(movie.id)
+                            ? Icons.bookmark_rounded
+                            : Icons.bookmark_border_rounded,
+                        size: 17,
+                      ),
+                      label: Text(
+                        store.isFavorite(movie.id) ? '즐겨찾기 해제' : '즐겨찾기',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        minimumSize: const Size(0, 42),
+                        shape: const StadiumBorder(),
+                        textStyle: const TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => _openRatingDialog(movie),
+                      icon: const Icon(Icons.rate_review_outlined, size: 17),
+                      label: Text(userRating == null ? '평점 남기기' : '평점 수정하기'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 42),
+                        shape: const StadiumBorder(),
+                        textStyle: const TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
       body: AnimatedBuilder(
         animation: store,
         builder: (context, child) {
@@ -121,6 +183,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
+                  key: const ValueKey("movie-detail-scroll"),
                   padding: const EdgeInsets.only(bottom: 14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,13 +224,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             const SizedBox(height: 10),
                             Row(
                               children: [
-                                const MovieRatingIndicator(
-                                  rating: 4.5,
+                                MovieRatingIndicator(
+                                  rating: movie.rating,
                                   itemSize: 15,
                                 ),
                                 const SizedBox(width: 7),
                                 Text(
-                                  '4.5 (${_formatCount(movie.ratingCount)})',
+                                  '${movie.rating.toStringAsFixed(1)} (${_formatCount(movie.ratingCount)})',
                                   style: textTheme.bodySmall?.copyWith(
                                     color: AppColors.textPrimary,
                                     fontSize: 11,
@@ -225,55 +288,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                   ),
                 ),
               ),
-              SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(17, 10, 17, 9),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => _toggleFavorite(movie),
-                          icon: const Icon(
-                            Icons.bookmark_border_rounded,
-                            size: 17,
-                          ),
-                          label: Text(
-                            store.isFavorite(movie.id) ? '즐겨찾기 해제' : '즐겨찾기',
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            side: const BorderSide(color: AppColors.primary),
-                            minimumSize: const Size(0, 42),
-                            shape: const StadiumBorder(),
-                            textStyle: const TextStyle(fontSize: 11),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () => _openRatingDialog(movie),
-                          icon: const Icon(
-                            Icons.rate_review_outlined,
-                            size: 17,
-                          ),
-                          label: Text(
-                            userRating == null ? '평점 남기기' : '평점 수정하기',
-                          ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(0, 42),
-                            shape: const StadiumBorder(),
-                            textStyle: const TextStyle(fontSize: 11),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           );
         },
@@ -308,84 +322,6 @@ class _GenreTag extends StatelessWidget {
           label,
           style: Theme.of(context).textTheme.labelSmall
               ?.copyWith(color: AppColors.textSecondary, fontSize: 10),
-        ),
-      ),
-    );
-  }
-}
-
-class RatingDialog extends StatefulWidget {
-  const RatingDialog({
-    super.key,
-    required this.movieTitle,
-    this.initialRating = 3.5,
-    this.isRerating = false,
-  });
-
-  final String movieTitle;
-  final double initialRating;
-  final bool isRerating;
-
-  @override
-  State<RatingDialog> createState() => _RatingDialogState();
-}
-
-class _RatingDialogState extends State<RatingDialog> {
-  late double _rating = widget.initialRating;
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: AppColors.cardSurface,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 13),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '영화는 어떠셨나요?',
-              style: Theme.of(context).textTheme.titleMedium
-                  ?.copyWith(fontSize: 14, fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 9),
-            MovieRatingInput(
-              rating: _rating,
-              onChanged: (value) => setState(() => _rating = value),
-              itemSize: 30,
-            ),
-            if (widget.isRerating) ...[
-              const SizedBox(height: 2),
-              TextButton(
-                onPressed: () => setState(() => _rating = 3.5),
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 28),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  foregroundColor: AppColors.primary,
-                  textStyle: const TextStyle(fontSize: 10),
-                ),
-                child: const Text('다시 선택하기'),
-              ),
-            ] else
-              const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 34,
-              child: FilledButton(
-                onPressed: () => Navigator.of(context).pop(_rating),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  textStyle: const TextStyle(fontSize: 11),
-                ),
-                child: const Text('확인'),
-              ),
-            ),
-          ],
         ),
       ),
     );

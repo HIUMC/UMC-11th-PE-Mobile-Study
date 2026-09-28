@@ -32,9 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // [RegExp (정규표현식)] 입력된 문자열이 이메일 형식(xxx@xxx.xxx)에 맞는지 검사
   // 앱이 실행될 때 한 번만 메모리에 올리도록 final로 선언
-  final _emailRegex = RegExp(
-    r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
-  );
+  final _emailRegex = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
   // [dispose()] 화면이 완전히 닫힐 때 컨트롤러와 포커스 노드가 차지하던 메모리를 해제하는 함수.
   // 이 작업을 생략하면 화면을 껐다 켤 때마다 불필요한 데이터가 쌓이는 '메모리 누수'가 발생
@@ -57,7 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // [Getter (get)] 함수처럼 생겼지만 변수처럼 사용할 수 있는 읽기 전용 속성
   // 모든 조건(닉네임 길이, 이메일 형식, 비밀번호 길이, 약관 동의)이 참(true)일 때만 true를 반환하여 버튼을 활성화
   bool get _isFormValid {
-    return _nicknameController.text.length >= 2 &&
+    return _nicknameController.text.trim().length >= 2 &&
         _emailRegex.hasMatch(_emailController.text) &&
         _passwordController.text.length >= 8 &&
         _isTermsAgreed;
@@ -67,193 +65,193 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     // [Scaffold] 앱 화면의 기본 뼈대(앱바, 바디, 하단바 등)를 구성하는 도화지 역할
     // 여기에 배경색, AppBar 등 화면의 가장 기본적인 레이아웃을 설정
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          // [Navigator.maybePop] 현재 화면을 닫고 이전 화면으로 돌아감.
-          // pop과 달리 이전 화면이 없을 때는 앱이 꺼지는 에러를 방지해 주는 안전한 방식
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/start'),
-        ),
-        title: const Text(
-          '회원가입',
-          style: TextStyle(
-            fontFamily: 'Manrope',
-            fontWeight: FontWeight.w500,
-            fontSize: 22,
-            height: 28 / 22,
-            letterSpacing: 0,
-            color: AppColors.primary,
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: const Text(
+            '회원가입',
+            style: TextStyle(
+              fontFamily: 'Manrope',
+              fontWeight: FontWeight.w500,
+              fontSize: 22,
+              height: 28 / 22,
+              letterSpacing: 0,
+              color: AppColors.primary,
+            ),
           ),
         ),
-      ),
-      // [SafeArea] 아이폰의 노치나 기기 하단의 홈 바 영역을 침범하지 않도록 안전 구역에 위젯을 배치
-      // 이 위젯이 없으면 글자나 버튼이 기기 베젤에 가려질 수 있음
-      body: SafeArea(
-        // [SingleChildScrollView] 내용이 길어져 기기 화면 밖으로 넘어갈 때 스크롤이 가능케함.
-        // 텍스트 필드를 터치해서 키보드가 올라올 때 발생하는 '화면 오버플로우' 에러를 방지.
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-          // [Form] 폼 텍스트 필드들을 하나의 논리적인 그룹으로 묶어주는 역할
-          // 앞서 선언한 _formKey를 연결해 두었기 때문에 전체 필드를 한 번에 제어
-          child: Form(
-            key: _formKey,
-            // [Column] 자식 위젯들을 위에서 아래로(세로 방향) 차곡차곡 쌓아주는 위젯
-            // crossAxisAlignment를 stretch로 주어 자식들이 가로로 꽉 차게 팽창하도록 만들었습니다.
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  '환영합니다!\n간단한 정보만 입력하고 시작해보세요.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontFamily: 'Manrope',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                    height: 24 / 16,
-                    letterSpacing: 0,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                // [SizedBox] 빈 여백을 만들거나 위젯의 강제 크기를 지정할 때 사용하는 투명한 상자
-                // 여기서는 위아래 위젯 사이에 32픽셀만큼의 간격을 주기 위해 사용
-                const SizedBox(height: 32),
-
-                const SectionLabel(text: '닉네임'),
-                CustomInputField(
-                  controller: _nicknameController,
-                  hintText: '닉네임을 입력해주세요',
-                  textInputAction:
-                      TextInputAction.next, // 키보드 우측 하단 버튼을 '다음'으로 변경
-                  onChanged: (value) => _updateState(),
-                  // [FocusScope.requestFocus] '다음' 버튼을 눌렀을 때 커서를 지정한 노드(이메일 필드)로 즉시 넘김
-                  // 사용자가 화면을 터치하지 않고도 키보드만으로 입력을 이어갈 수 있게 해줌
-                  onFieldSubmitted: (_) =>
-                      FocusScope.of(context).requestFocus(_emailFocusNode),
-                  isValid: _nicknameController.text.length >= 2,
-                  isError:
-                      _nicknameController.text.isNotEmpty &&
-                      _nicknameController.text.length < 2,
-                  errorText: '닉네임은 2자 이상이어야 합니다.',
-                ),
-                const SizedBox(height: 16),
-
-                const SectionLabel(text: '이메일'),
-                CustomInputField(
-                  controller: _emailController,
-                  focusNode: _emailFocusNode, // 닉네임에서 넘겨준 포커스를 받을 수 있도록 연결
-                  hintText: '이메일 주소를 입력해주세요',
-                  keyboardType:
-                      TextInputType.emailAddress, // 키보드 자판을 이메일 입력용으로 변경
-                  textInputAction: TextInputAction.next,
-                  onChanged: (value) => _updateState(),
-                  onFieldSubmitted: (_) =>
-                      FocusScope.of(context).requestFocus(_passwordFocusNode),
-                  isValid: _emailRegex.hasMatch(_emailController.text),
-                  isError:
-                      _emailController.text.isNotEmpty &&
-                      !_emailRegex.hasMatch(_emailController.text),
-                  errorText: '올바른 이메일 형식이 아닙니다.',
-                ),
-                const SizedBox(height: 16),
-
-                const SectionLabel(text: '비밀번호'),
-                CustomInputField(
-                  controller: _passwordController,
-                  focusNode: _passwordFocusNode,
-                  hintText: '비밀번호를 입력해주세요',
-                  obscureText: true, // 입력한 글자가 동그라미로 가려지도록 처리하는 속
-                  textInputAction: TextInputAction.done,
-                  onChanged: (value) => _updateState(),
-                  onFieldSubmitted: (_) =>
-                      FocusScope.of(context).unfocus(), // 입력을 완료하면 키보드를 닫음
-                  isValid: _passwordController.text.length >= 8,
-                  isError:
-                      _passwordController.text.isNotEmpty &&
-                      _passwordController.text.length < 8,
-                  errorText: '비밀번호는 8자 이상이어야 합니다.',
-                ),
-                const SizedBox(height: 146),
-
-                TermsCheckbox(
-                  isAgreed: _isTermsAgreed,
-                  onChanged: (value) {
-                    setState(() {
-                      _isTermsAgreed = value ?? false;
-                    });
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // [ElevatedButton] 누르면 살짝 떠오르는 듯한 그림자 효과를 가진 Material 기본 버튼
-                // onPressed 속성에 null이 들어가면 버튼이 비활성화(회색)되고, 함수가 들어가면 활성화
-                ElevatedButton(
-                  onPressed: _isFormValid
-                      ? () => context.pushReplacement('/home')
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.disabledButton,
-                    disabledForegroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    '가입하기',
+        // [SafeArea] 아이폰의 노치나 기기 하단의 홈 바 영역을 침범하지 않도록 안전 구역에 위젯을 배치
+        // 이 위젯이 없으면 글자나 버튼이 기기 베젤에 가려질 수 있음
+        body: SafeArea(
+          // [SingleChildScrollView] 내용이 길어져 기기 화면 밖으로 넘어갈 때 스크롤이 가능케함.
+          // 텍스트 필드를 터치해서 키보드가 올라올 때 발생하는 '화면 오버플로우' 에러를 방지.
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 24.0,
+            ),
+            // [Form] 폼 텍스트 필드들을 하나의 논리적인 그룹으로 묶어주는 역할
+            // 앞서 선언한 _formKey를 연결해 두었기 때문에 전체 필드를 한 번에 제어
+            child: Form(
+              key: _formKey,
+              // [Column] 자식 위젯들을 위에서 아래로(세로 방향) 차곡차곡 쌓아주는 위젯
+              // crossAxisAlignment를 stretch로 주어 자식들이 가로로 꽉 차게 팽창하도록 만들었습니다.
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    '환영합니다!\n간단한 정보만 입력하고 시작해보세요.',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
                       height: 24 / 16,
+                      letterSpacing: 0,
+                      color: AppColors.textSecondary,
                     ),
                   ),
-                ),
+                  // [SizedBox] 빈 여백을 만들거나 위젯의 강제 크기를 지정할 때 사용하는 투명한 상자
+                  // 여기서는 위아래 위젯 사이에 32픽셀만큼의 간격을 주기 위해 사용
+                  const SizedBox(height: 32),
 
-                const SizedBox(height: 24),
+                  const SectionLabel(text: '닉네임'),
+                  CustomInputField(
+                    controller: _nicknameController,
+                    hintText: '닉네임을 입력해주세요',
+                    textInputAction:
+                        TextInputAction.next, // 키보드 우측 하단 버튼을 '다음'으로 변경
+                    onChanged: (value) => _updateState(),
+                    // [FocusScope.requestFocus] '다음' 버튼을 눌렀을 때 커서를 지정한 노드(이메일 필드)로 즉시 넘김
+                    // 사용자가 화면을 터치하지 않고도 키보드만으로 입력을 이어갈 수 있게 해줌
+                    onFieldSubmitted: (_) =>
+                        FocusScope.of(context).requestFocus(_emailFocusNode),
+                    isValid: _nicknameController.text.trim().length >= 2,
+                    isError:
+                        _nicknameController.text.isNotEmpty &&
+                        _nicknameController.text.trim().length < 2,
+                    errorText: '닉네임은 2자 이상이어야 합니다.',
+                  ),
+                  const SizedBox(height: 16),
 
-                // [Row] 자식 위젯들을 가로(좌측에서 우측)로 나란히 배치해 주는 역할을 합니다.
-                // mainAxisAlignment를 center로 주어 글자들을 화면 가운데 정렬시켰습니다.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      '이미 계정이 있나요? ',
+                  const SectionLabel(text: '이메일'),
+                  CustomInputField(
+                    controller: _emailController,
+                    focusNode: _emailFocusNode, // 닉네임에서 넘겨준 포커스를 받을 수 있도록 연결
+                    hintText: '이메일 주소를 입력해주세요',
+                    keyboardType:
+                        TextInputType.emailAddress, // 키보드 자판을 이메일 입력용으로 변경
+                    textInputAction: TextInputAction.next,
+                    onChanged: (value) => _updateState(),
+                    onFieldSubmitted: (_) =>
+                        FocusScope.of(context).requestFocus(_passwordFocusNode),
+                    isValid: _emailRegex.hasMatch(_emailController.text),
+                    isError:
+                        _emailController.text.isNotEmpty &&
+                        !_emailRegex.hasMatch(_emailController.text),
+                    errorText: '올바른 이메일 형식이 아닙니다.',
+                  ),
+                  const SizedBox(height: 16),
+
+                  const SectionLabel(text: '비밀번호'),
+                  CustomInputField(
+                    controller: _passwordController,
+                    focusNode: _passwordFocusNode,
+                    hintText: '비밀번호를 입력해주세요',
+                    obscureText: true, // 입력한 글자가 동그라미로 가려지도록 처리하는 속
+                    textInputAction: TextInputAction.done,
+                    onChanged: (value) => _updateState(),
+                    onFieldSubmitted: (_) =>
+                        FocusScope.of(context).unfocus(), // 입력을 완료하면 키보드를 닫음
+                    isValid: _passwordController.text.length >= 8,
+                    isError:
+                        _passwordController.text.isNotEmpty &&
+                        _passwordController.text.length < 8,
+                    errorText: '비밀번호는 8자 이상이어야 합니다.',
+                  ),
+                  const SizedBox(height: 146),
+
+                  TermsCheckbox(
+                    isAgreed: _isTermsAgreed,
+                    onChanged: (value) {
+                      setState(() {
+                        _isTermsAgreed = value ?? false;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // [ElevatedButton] 누르면 살짝 떠오르는 듯한 그림자 효과를 가진 Material 기본 버튼
+                  // onPressed 속성에 null이 들어가면 버튼이 비활성화(회색)되고, 함수가 들어가면 활성화
+                  ElevatedButton(
+                    onPressed: _isFormValid ? () => context.go('/home') : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: AppColors.disabledButton,
+                      disabledForegroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      '가입하기',
                       style: TextStyle(
                         fontFamily: 'Manrope',
                         fontWeight: FontWeight.w500,
                         fontSize: 16,
                         height: 24 / 16,
-                        color: AppColors.textSecondary,
                       ),
                     ),
-                    // [GestureDetector] 터치 이벤트를 감지하지 못하는 일반 글자나 이미지를 버튼처럼 만들어주는 투명한 감지기입니다.
-                    // onTap에 기능을 넣으면 글씨를 클릭했을 때 함수가 실행되게 할 수 있습니다.
-                    GestureDetector(
-                      onTap: () {
-                        // TODO: 로그인 화면 구현 후 아래 주석 해제하여 연결
-                        // Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginView()));
-                        debugPrint('로그인 버튼 누름');
-                      },
-                      child: const Text(
-                        '로그인',
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // [Row] 자식 위젯들을 가로(좌측에서 우측)로 나란히 배치해 주는 역할을 합니다.
+                  // mainAxisAlignment를 center로 주어 글자들을 화면 가운데 정렬시켰습니다.
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        '이미 계정이 있나요? ',
                         style: TextStyle(
                           fontFamily: 'Manrope',
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
                           height: 24 / 16,
-                          color: AppColors.primary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
+                      // [GestureDetector] 터치 이벤트를 감지하지 못하는 일반 글자나 이미지를 버튼처럼 만들어주는 투명한 감지기입니다.
+                      // onTap에 기능을 넣으면 글씨를 클릭했을 때 함수가 실행되게 할 수 있습니다.
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('이번 실습에서는 회원가입 입력 검증만 진행해요.'),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          '로그인',
+                          style: TextStyle(
+                            fontFamily: 'Manrope',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 16,
+                            height: 24 / 16,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ),

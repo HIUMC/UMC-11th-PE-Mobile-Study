@@ -179,7 +179,7 @@ class _FeaturedMovie extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '로맨스 · 드라마 · ${movie.runtime}분',
+                      '${movie.detailGenre ?? movie.genre} · ${movie.runtime}분',
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 13,

@@ -5,16 +5,7 @@ import '../data/mock_movies.dart';
 import '../models/movie.dart';
 import '../theme/app_colors.dart';
 import '../widgets/movie_card.dart';
-
-const _movieGenres = <String>[
-  '드라마',
-  'SF',
-  '애니메이션',
-  '스릴러',
-  '액션',
-  '로맨스',
-  '다큐멘터리',
-];
+import '../widgets/genre_filter_sheet.dart';
 
 class MovieListScreen extends StatefulWidget {
   const MovieListScreen({
@@ -39,7 +30,7 @@ class _MovieListScreenState extends State<MovieListScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery);
-    _selectedGenres = widget.initialGenres.toSet();
+    _selectedGenres = widget.initialGenres.where(movieGenres.contains).toSet();
     _isSearching = widget.initialQuery.isNotEmpty;
   }
 
@@ -55,7 +46,9 @@ class _MovieListScreenState extends State<MovieListScreen> {
       _isSearching = widget.initialQuery.isNotEmpty;
     }
     if (oldWidget.initialGenres.join(',') != widget.initialGenres.join(',')) {
-      _selectedGenres = widget.initialGenres.toSet();
+      _selectedGenres = widget.initialGenres
+          .where(movieGenres.contains)
+          .toSet();
     }
   }
 
@@ -92,6 +85,20 @@ class _MovieListScreenState extends State<MovieListScreen> {
     context.go(location);
   }
 
+  Future<void> _openFilter() async {
+    FocusScope.of(context).unfocus();
+    final selected = await showModalBottomSheet<Set<String>>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => GenreFilterSheet(selectedGenres: _selectedGenres),
+    );
+    if (!mounted || selected == null) return;
+    setState(() => _selectedGenres = selected);
+    _syncRoute();
+  }
+
   @override
   Widget build(BuildContext context) {
     final movies = _filteredMovies;
@@ -118,6 +125,15 @@ class _MovieListScreenState extends State<MovieListScreen> {
             icon: const Icon(
               Icons.search_rounded,
               color: AppColors.textPrimary,
+            ),
+          ),
+          IconButton(
+            tooltip: '장르 필터',
+            onPressed: _openFilter,
+            icon: Badge(
+              isLabelVisible: _selectedGenres.isNotEmpty,
+              label: Text('${_selectedGenres.length}'),
+              child: const Icon(Icons.filter_alt_outlined),
             ),
           ),
           const SizedBox(width: 12),
@@ -152,38 +168,13 @@ class _MovieListScreenState extends State<MovieListScreen> {
                 ),
               ),
             ),
-          SizedBox(
-            height: 48,
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              scrollDirection: Axis.horizontal,
-              children: [
-                _GenreChip(
-                  label: '전체',
-                  selected: _selectedGenres.isEmpty,
-                  onTap: () {
-                    setState(() => _selectedGenres.clear());
-                    _syncRoute();
-                  },
-                ),
-                ..._movieGenres.map(
-                  (genre) => Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: _GenreChip(
-                      label: genre,
-                      selected: _selectedGenres.contains(genre),
-                      onTap: () {
-                        setState(() {
-                          if (!_selectedGenres.add(genre)) {
-                            _selectedGenres.remove(genre);
-                          }
-                        });
-                        _syncRoute();
-                      },
-                    ),
-                  ),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${_selectedGenres.isEmpty ? "전체 장르" : _selectedGenres.join(" · ")} · ${movies.length}편',
+              ),
             ),
           ),
           const SizedBox(height: 11),
@@ -193,13 +184,14 @@ class _MovieListScreenState extends State<MovieListScreen> {
                 : GridView.builder(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                     itemCount: movies.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 18,
-                          mainAxisSpacing: 20,
-                          childAspectRatio: 0.57,
-                        ),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 18,
+                      mainAxisSpacing: 20,
+                      mainAxisExtent:
+                          (MediaQuery.sizeOf(context).width - 58) / 2 / 0.69 +
+                          82,
+                    ),
                     itemBuilder: (context, index) => MovieCard(
                       movie: movies[index],
                       showScoreBadge: true,
@@ -209,38 +201,6 @@ class _MovieListScreenState extends State<MovieListScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _GenreChip extends StatelessWidget {
-  const _GenreChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      labelStyle: TextStyle(
-        color: selected ? Colors.white : AppColors.textSecondary,
-        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-        fontSize: 13,
-      ),
-      selectedColor: AppColors.primary,
-      backgroundColor: AppColors.primaryTint,
-      side: BorderSide.none,
-      showCheckmark: false,
-      padding: const EdgeInsets.symmetric(horizontal: 9),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
     );
   }
 }
