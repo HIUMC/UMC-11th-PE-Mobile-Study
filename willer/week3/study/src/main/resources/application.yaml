@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: "umc-study" # 앱 이름. 로그에 표시됨
+
+  datasource: # DB 연결 정보. 스프링이 이걸 읽고 서버가 켜질 때 커넥션 풀과 JdbcTemplate을 알아서 만들어줌
+    driver-class-name: com.mysql.cj.jdbc.Driver # MySQL 드라이버 클래스
+    url: ${DB_URL} # ${}는 환경변수 자리. 실제 값은 코드가 아니라 IntelliJ 실행 설정에 넣어서 GitHub에 안 올라감
+    username: ${DB_USER}
+    password: ${DB_PW}
