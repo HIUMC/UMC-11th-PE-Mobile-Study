@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: "umc-study"
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PW}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # Entity와 실제 DB 테이블 구조가 일치하는지 검사
+    open-in-view: false # DB 작업 범위를 명확하게 관리
