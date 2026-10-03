@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 // 위젯이 다시 그려져야 하는(동적인) 데이터가 있을 때 사용하는 기본 구조.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
+  //피알 다시
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
