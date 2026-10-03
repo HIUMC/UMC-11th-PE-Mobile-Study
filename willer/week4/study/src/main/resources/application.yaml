@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: "umc-study" # 앱 이름. 로그에 표시됨
+
+  datasource: # DB 연결 정보. 스프링이 이걸 읽고 서버가 켜질 때 커넥션 풀을 알아서 만들어줌
+    driver-class-name: com.mysql.cj.jdbc.Driver # MySQL 드라이버 클래스
+    url: ${DB_URL} # ${}는 환경변수 자리. 실제 값은 코드가 아니라 IntelliJ 실행 설정에 넣어서 GitHub에 안 올라감
+    username: ${DB_USER}
+    password: ${DB_PW}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # 테이블을 만들거나 고치지 않고, 엔티티와 기존 테이블 구조가 맞는지 검사만 함. 안 맞으면 서버가 안 켜짐
+    open-in-view: false # DB 연결을 Service의 트랜잭션 안에서만 쓰고 응답 만들 때까지 붙잡고 있지 않음
