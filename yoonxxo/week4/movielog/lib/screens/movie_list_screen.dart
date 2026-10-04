@@ -32,12 +32,13 @@ class _MovieListScreenState extends State<MovieListScreen> {
   @override
   void initState() {
     super.initState();
-    // 5주차에 실제 유저별 평점 조회 API로 교체 예정.
+    // 5주차에 실제 유저별 평점 조회 API로 교체 예정
     // TODO(5주차 유저별 평점 조회 API)
+
     // Future는 build()가 아니라 initState()에서 생성함.
     _moviesFuture = _movieService.fetchMovies();
 
-    // 저장되어 있던 장르를 불러옴.
+    // 저장되어 있던 장르를 불러옴
     _restoreSelectedGenre();
   }
 
