@@ -1,0 +1,36 @@
+plugins {
+	id 'java' // 자바 프로젝트로 빌드
+	id 'org.springframework.boot' version '3.5.0' // 스프링 부트 버전. 외부 라이브러리 호환성 때문에 4.x 대신 3.5.0으로 고정
+	id 'io.spring.dependency-management' version '1.1.7' // 스프링 부트 버전에 맞는 라이브러리 버전을 알아서 맞춰줌. 그래서 아래 의존성에 버전을 안 적음
+}
+
+group = 'com.umc' // start.spring.io에서 입력한 Group
+version = '0.0.1-SNAPSHOT' // 프로젝트 버전. SNAPSHOT은 아직 개발 중이라는 뜻
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21) // 설치한 JDK 21로 컴파일
+	}
+}
+
+repositories {
+	mavenCentral() // 라이브러리를 내려받을 저장소. 자바 라이브러리들이 모여 있는 공식 창고
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA(Hibernate)와 Spring Data Repository. JDBC와 커넥션 풀도 포함돼서 Rental의 JdbcTemplate도 그대로 동작
+	implementation 'org.springframework.boot:spring-boot-starter-validation' // @NotBlank, @Size 같은 요청 검증. 없으면 @Valid를 붙여도 검증이 안 됨
+	implementation 'org.springframework.boot:spring-boot-starter-web' // REST API와 내장 톰캣 서버. 8080 포트로 요청을 받음
+	compileOnly 'org.projectlombok:lombok' // @RequiredArgsConstructor 같은 반복 코드 자동 생성. 컴파일할 때만 필요
+	runtimeOnly 'com.mysql:mysql-connector-j' // MySQL과 통신하는 드라이버. 실행할 때만 필요
+	annotationProcessor 'org.projectlombok:lombok' // 컴파일할 때 Lombok 어노테이션을 실제 코드로 바꿔줌
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test' // 테스트용.
+	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('test') {
+	useJUnitPlatform() // 테스트를 JUnit 5로 실행
+}
