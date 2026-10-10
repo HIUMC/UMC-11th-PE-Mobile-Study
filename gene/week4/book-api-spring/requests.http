@@ -1,0 +1,68 @@
+### 1. 도서 목록 조회 (200)
+GET http://localhost:8080/books
+
+### 2. 도서 등록 - 설명 포함 (201)
+POST http://localhost:8080/books
+Content-Type: application/json
+
+{
+  "categoryId": 2,
+  "title": "클린 코드",
+  "description": "애자일 소프트웨어 장인 정신"
+}
+
+### 3. 도서 등록 - 설명 생략 (201, description: null)
+POST http://localhost:8080/books
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "데미안"
+}
+
+### 4. 존재하지 않는 카테고리 (404)
+POST http://localhost:8080/books
+Content-Type: application/json
+
+{
+  "categoryId": 999,
+  "title": "없는 카테고리 책",
+  "description": "카테고리 999번은 없어요"
+}
+
+### 5. 빈 제목 (400)
+POST http://localhost:8080/books
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "",
+  "description": "제목이 비어 있어요"
+}
+
+### 6. categoryId 누락 (400)
+POST http://localhost:8080/books
+Content-Type: application/json
+
+{
+  "title": "카테고리 없는 책"
+}
+
+### 7. categoryId 음수 (400)
+POST http://localhost:8080/books
+Content-Type: application/json
+
+{
+  "categoryId": -1,
+  "title": "음수 카테고리 책"
+}
+
+### 8. 설명 500자 초과 (400)
+POST http://localhost:8080/books
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "title": "설명이 너무 긴 책",
+  "description": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
