@@ -1,11 +1,14 @@
+import 'package:dio/dio.dart'; // DioException 사용 가능
 import 'package:flutter/material.dart'; // Scaffold, TextFormField, Checkbox 등 Material 위젯 사용
 import 'package:go_router/go_router.dart'; // context.go 사용 가능
+import 'package:provider/provider.dart'; // context.read 사용 가능
 
+import 'data/services/member_api_service.dart';
 import 'theme/app_colors.dart'; // 상태 아이콘(체크/오류) 색 지정에 사용
 import 'theme/app_text_styles.dart'; // 라벨, 안내 문구, 링크 텍스트 스타일
 
 // 사용자가 입력할 때마다 화면이 바뀌어야 하므로 StatefulWidget을 쓴다.
-// 1주차 프로필 화면은 값이 고정이라 StatelessWidget이었다.
+// 프로필 화면은 값이 고정이라 StatelessWidget이었다.
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key}); // const는 이 위젯이 만들어질 때 바뀔 게 없다는 뜻. Flutter가 재사용해서 성능이 좋아짐
 
@@ -35,6 +38,10 @@ class _SignUpScreenState extends State<SignUpScreen> { // 앞의 _는 이 파일
 
   // 약관 동의 체크박스 상태. 값 자체를 true/false로 바꿔야 해서 final이 아니다.
   bool agreedToTerms = false;
+
+  String? nicknameServerError; // 서버가 중복이라고 답했을 때의 메시지. 형식 검사와 따로 보관
+  String? emailServerError;
+  bool isChecking = false; // 중복 확인 요청 중이면 true. 그동안 가입 버튼을 막음
 
   // Controller와 FocusNode는 화면이 사라져도 자동으로 정리되지 않는다.
   // 직접 해제하지 않으면 메모리에 계속 남아 누수가 생긴다.
@@ -71,7 +78,7 @@ class _SignUpScreenState extends State<SignUpScreen> { // 앞의 _는 이 파일
       return '닉네임은 2자 이상이어야 합니다.';
     }
 
-    return null; // 여기까지 오면 통과
+    return nicknameServerError; // 형식은 통과했어도 서버가 중복이라고 했으면 그 메시지. 없으면 null이라 통과
   }
 
   String? validateEmail(String? value) {
@@ -82,18 +89,18 @@ class _SignUpScreenState extends State<SignUpScreen> { // 앞의 _는 이 파일
     }
 
     // @와 . 존재 여부만 확인하는 단순한 검사.
-    // 정규식으로 더 엄격하게 할 수도 있지만 워크북 예제 수준에 맞췄다.
+    // 정규식으로 더 엄격하게 할 수도 있지만 예제 수준에 맞췄다.
     // 피그마 오류 화면의 "test@"도 .이 없어서 이 조건에 걸린다.
     if (!email.contains('@') || !email.contains('.')) {
       return '올바른 이메일 형식이 아닙니다.';
     }
 
-    return null;
+    return emailServerError; // 서버 중복 결과까지 같은 자리에 오류로 표시
   }
 
   String? validatePassword(String? value) {
-    // 닉네임·이메일과 달리 trim()을 쓰지 않았다.
-    // 비밀번호는 공백도 유효한 문자라서 우리가 임의로 잘라내면
+    // 닉네임, 이메일과 달리 trim()을 쓰지 않았다.
+    // 비밀번호는 공백도 유효한 문자라서 임의로 잘라내면
     // 사용자가 설정한 값과 달라진다.
     final password = value ?? '';
 
@@ -118,26 +125,47 @@ class _SignUpScreenState extends State<SignUpScreen> { // 앞의 _는 이 파일
       validateNickname(nicknameController.text) == null && // null이면 통과했다는 뜻
       validateEmail(emailController.text) == null &&
       validatePassword(passwordController.text) == null &&
-      agreedToTerms; // 약관까지 동의해야 true
+      agreedToTerms && // 약관까지 동의해야 true
+      !isChecking; // 중복 확인 중에는 버튼을 다시 못 누르게 막음
 
   // 가입 버튼을 눌렀을 때 실행된다.
-  void onSubmit() {
+  // 서버에 중복 확인을 기다려야 해서 async.
+  Future<void> onSubmit() async {
     // Form 안의 모든 TextFormField의 validator를 한 번에 실행한다.
     // Form이 아직 그려지지 않았으면 currentState가 null일 수 있어 ?.와 ?? false로 처리했다.
-    //
-    // canSubmit이 이미 true라 버튼이 눌린 건데 왜 또 검사하는가:
-    // canSubmit은 매 입력마다 도는 가벼운 예비 검사이고,
-    // validate()는 제출 시점의 최종 검사이면서 오류 메시지를 화면에 띄우는 역할까지 한다.
     final isValid = formKey.currentState?.validate() ?? false;
 
-    if (!isValid) return; // 유효하지 않으면 여기서 함수 종료(early return)
+    if (!isValid) return; // 형식이 틀리면 서버에 묻지 않고 종료
 
     // 화면 전체의 포커스를 해제해 키보드를 내린다.
-    // 개별 FocusNode의 unfocus()는 그 칸만 해제하지만 이건 화면 전체에 적용된다.
     FocusScope.of(context).unfocus();
 
-    // 이번 주차는 API 연결 범위가 아니라 실제 가입 처리는 하지 않는다.
-    context.go('/home'); // 검증 통과 시 홈으로 이동. go라서 회원가입이 스택에 남지 않음. 홈에서 뒤로가기해도 회원가입으로 안 돌아감
+    final memberApi = context.read<MemberApiService>(); // 앱 맨 위에 올려둔 자체 API Service를 꺼냄. 콜백 안이라 read
+    setState(() => isChecking = true);
+
+    try {
+      final nicknameAvailable = await memberApi.isNicknameAvailable(nicknameController.text.trim()); // GET /members/nickname/{nickname}
+      final emailAvailable = await memberApi.isEmailAvailable(emailController.text.trim()); // GET /members/email/{email}
+
+      if (!mounted) return; // 기다리는 사이 화면이 사라졌으면 아무것도 안 함
+
+      setState(() {
+        nicknameServerError = nicknameAvailable ? null : '이미 사용 중인 닉네임이에요.';
+        emailServerError = emailAvailable ? null : '이미 사용 중인 이메일이에요.';
+        isChecking = false;
+      });
+
+      if (!(formKey.currentState?.validate() ?? false)) return; // 서버 결과를 반영해 다시 검사. 중복이면 입력칸 아래에 메시지가 뜨고 종료
+
+      // 실제 가입 API는 아직 없어서 중복 확인까지만 하고 홈으로 이동
+      context.go('/home'); // go라서 회원가입이 스택에 남지 않음
+    } on DioException {
+      if (!mounted) return;
+      setState(() => isChecking = false);
+      ScaffoldMessenger.of(context).showSnackBar( // 서버가 꺼져 있거나 연결이 안 되면 안내
+        const SnackBar(content: Text('서버에 연결하지 못했어요. 잠시 후 다시 시도해주세요.')),
+      );
+    }
   }
 
   // 현재 상태에 맞는 화면을 만들어 반환한다.
@@ -180,8 +208,8 @@ class _SignUpScreenState extends State<SignUpScreen> { // 앞의 _는 이 파일
                   textInputAction: TextInputAction.next, // 키보드 오른쪽 아래를 "다음"으로
                   // Controller와 입력창은 자동으로 동기화되지만
                   // 그 값에 따라 버튼 색까지 바뀌게 하려면 다시 그리라는 신호가 필요하다.
-                  // 바꿀 값이 없어 괄호 안이 비어 있고, (_)는 매개변수를 쓰지 않는다는 표시다.
-                  onChanged: (_) => setState(() {}),
+                  // 닉네임을 고치면 이전 서버 중복 결과는 의미가 없어서 지움. (_)는 매개변수를 쓰지 않는다는 표시다.
+                  onChanged: (_) => setState(() => nicknameServerError = null),
                   // "다음"을 눌렀을 때 이메일 칸으로 커서를 옮긴다.
                   onFieldSubmitted: (_) => emailFocusNode.requestFocus(),
                   // 닉네임은 포커스를 받을 일이 없어 focusNode를 넘기지 않았다.
@@ -195,7 +223,7 @@ class _SignUpScreenState extends State<SignUpScreen> { // 앞의 _는 이 파일
                   validate: validateEmail,
                   keyboardType: TextInputType.emailAddress, // @와 .이 있는 키보드가 뜬다
                   textInputAction: TextInputAction.next,
-                  onChanged: (_) => setState(() {}),
+                  onChanged: (_) => setState(() => emailServerError = null), // 이메일을 고치면 이전 중복 결과를 지움
                   onFieldSubmitted: (_) => passwordFocusNode.requestFocus(),
                 ),
                 const SizedBox(height: 16),
@@ -230,7 +258,7 @@ class _SignUpScreenState extends State<SignUpScreen> { // 앞의 _는 이 파일
                   // 괄호를 붙이면 지금 실행해서 결과를 넘기는 것이 되고,
                   // 괄호가 없어야 "눌렀을 때 실행할 함수"를 넘기는 것이 된다.
                   onPressed: canSubmit ? onSubmit : null,
-                  child: const Text('가입하기'),
+                  child: Text(isChecking ? '확인 중...' : '가입하기'), // 요청 중에는 문구를 바꿔서 기다리는 중임을 보여줌
                 ),
                 const SizedBox(height: 20),
                 LoginPrompt(onPressed: () {}), // 하단 링크. 로그인 화면이 없어 비워두었다
@@ -273,7 +301,7 @@ class SignUpHeader extends StatelessWidget {
 
 // 라벨 + 간격 + 입력창을 한 세트로 묶은 위젯.
 // 같은 구조가 세 번 반복되므로 하나로 만들어 재사용했다.
-// 1주차에 StatItem을 만들어 세 번 쓴 것과 같은 방식이다.
+// 프로필 화면에서 StatItem을 만들어 세 번 쓴 것과 같은 방식이다.
 class LabeledTextField extends StatelessWidget {
   const LabeledTextField({
     super.key,
@@ -331,7 +359,7 @@ class LabeledTextField extends StatelessWidget {
         TextFormField( // TextField가 아니라 TextFormField여야 Form과 연결되고 validator가 동작한다
           controller: controller,
           focusNode: focusNode,
-          decoration: InputDecoration( // 테두리·배경·여백은 AppTheme에서 이미 정의했다
+          decoration: InputDecoration( // 테두리, 배경, 여백은 AppTheme에서 이미 정의했다
             hintText: hintText,
             suffixIcon: buildStatusIcon(), // 입력창 오른쪽 아이콘. null이면 표시되지 않는다
           ),

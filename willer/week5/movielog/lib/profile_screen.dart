@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // context.read 사용 가능
 
+import 'data/models/rating_dto.dart';
+import 'data/services/member_api_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_text_styles.dart';
 
@@ -23,6 +26,8 @@ class ProfileScreen extends StatelessWidget {
                 ProfileStats(),
                 SizedBox(height: 32),
                 FavoriteGenres(),
+                SizedBox(height: 32),
+                MyRatings(), // 자체 API에서 불러온 내 평점 목록
                 SizedBox(height: 24),
               ],
             ),
@@ -159,7 +164,7 @@ class StatItem extends StatelessWidget { // 재사용 위젯. 달라지는 값�
     return Container( // 배경색, 테두리, 둥근 모서리 필요해서 Container로 감쌈. 여백만 필요하다면 Padding으로 감싸도됨.
       margin: const EdgeInsets.symmetric(horizontal: 4), // 카드 사이 간격
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16), // 카드 내부 여백
-      decoration: BoxDecoration( // 노션내용대로 Container.color가 아니라 decoration 안에 color를 넣음
+      decoration: BoxDecoration( // Container.color가 아니라 decoration 안에 color를 넣음. 둘을 같이 쓰면 에러
         color: AppColors.white,
         border: Border.all(color: AppColors.gray.withValues(alpha: 0.3)), //Border.all(..)은 네 방향 전부 같은 테두리
         borderRadius: BorderRadius.circular(8), // 네 모서리 반지름 8
@@ -217,6 +222,98 @@ class FavoriteGenres extends StatelessWidget {
               .toList(), // map이 반환하는 건 Iterable<Widget>이지 List<Widget> 이 아님. Row의 childeren은 후자를 요구해서 변환해야함
         ),
       ],
+    );
+  }
+}
+
+class MyRatings extends StatefulWidget { // 내가 남긴 평점 목록. 처음 한 번 서버에서 불러와야 해서 StatefulWidget
+  const MyRatings({super.key});
+
+  static const memberId = 1; // 로그인이 아직 없어서 시드 데이터의 1번 회원으로 고정
+
+  @override
+  State<MyRatings> createState() => _MyRatingsState();
+}
+
+class _MyRatingsState extends State<MyRatings> {
+  late final Future<List<RatingDto>> ratingsFuture; // build마다 새로 요청하지 않게 Future를 한 번만 만들어 보관
+
+  @override
+  void initState() {
+    super.initState();
+    ratingsFuture = context.read<MemberApiService>().fetchRatings(MyRatings.memberId); // GET /members/1/ratings. initState에서는 구독 없이 read로만 꺼냄
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('내가 남긴 평점', style: AppTextStyles.titleMedium), // 섹션 제목
+        const SizedBox(height: 12),
+        FutureBuilder<List<RatingDto>>( // Future 상태(대기, 실패, 성공)에 따라 다른 위젯을 그림
+          future: ratingsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) { // 아직 응답 전
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) { // 서버가 꺼져 있거나 404 등으로 실패
+              return const Text('평점을 불러오지 못했어요.', style: AppTextStyles.bodySmall);
+            }
+
+            final ratings = snapshot.data ?? const <RatingDto>[];
+            if (ratings.isEmpty) {
+              return const Text('아직 남긴 평점이 없어요.', style: AppTextStyles.bodySmall);
+            }
+
+            return Column(
+              children: ratings.map((rating) => RatingTile(rating: rating)).toList(), // 평점 하나당 카드 하나
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class RatingTile extends StatelessWidget { // 평점 카드 하나. 영화 id, 별점, 코멘트, 작성일
+  const RatingTile({super.key, required this.rating});
+
+  final RatingDto rating;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = rating.createdAt.toIso8601String().substring(0, 10); // '2026-11-01T04:25:06'에서 날짜만
+
+    return Container(
+      width: double.infinity, // 가로를 꽉 채움
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        border: Border.all(color: AppColors.gray.withValues(alpha: 0.3)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('TMDB 영화 #${rating.movieId}', style: AppTextStyles.titleMedium), // 영화 정보는 DB에 없어서 TMDB id만 표시
+              const Spacer(), // 남은 공간을 밀어서 별점을 오른쪽 끝으로
+              const Icon(Icons.star, color: Colors.amber, size: 18),
+              const SizedBox(width: 4),
+              Text('${rating.score}', style: AppTextStyles.titleMedium),
+            ],
+          ),
+          if (rating.comment != null) ...[ // 코멘트가 없으면 줄과 간격을 통째로 뺌
+            const SizedBox(height: 8),
+            Text(rating.comment!, style: AppTextStyles.bodyMedium),
+          ],
+          const SizedBox(height: 8),
+          Text(date, style: AppTextStyles.bodySmall),
+        ],
+      ),
     );
   }
 }

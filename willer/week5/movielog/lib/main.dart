@@ -2,7 +2,9 @@ import 'package:flutter/material.dart'; //MaterialApp, Scaffold, Text, AppBar �
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // .env 읽기
 import 'package:provider/provider.dart'; // MultiProvider, Provider 사용 가능
 
+import 'core/network/movielog_client.dart';
 import 'core/network/tmdb_client.dart';
+import 'data/services/member_api_service.dart';
 import 'data/services/tmdb_movie_service.dart';
 import 'router/app_router.dart'; // 화면 주소록. 첫 화면과 화면 이동을 여기서 관리
 import 'theme/app_theme.dart';
@@ -22,6 +24,9 @@ class MovieLogApp extends StatelessWidget {  //StatelessWidget을 상속받음. 
       providers: [
         Provider<TmdbMovieService>( // 상태가 없는 Service라 일반 Provider
           create: (_) => TmdbMovieService(createTmdbClient()), // Dio Client를 만들어 Service에 넣음. 앱 전체에서 하나만 씀
+        ),
+        Provider<MemberApiService>( // 자체 API용 Service. 회원가입과 마이 화면에서 꺼내 씀
+          create: (_) => MemberApiService(createMovieLogClient()), // TMDB와 다른 Dio Client를 넣음
         ),
       ],
       child: MaterialApp.router( // MaterialApp 대신 사용. 첫 화면과 화면 이동을 GoRouter가 관리
