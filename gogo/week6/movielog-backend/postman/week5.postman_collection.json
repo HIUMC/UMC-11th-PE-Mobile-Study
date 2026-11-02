@@ -1,0 +1,171 @@
+{
+  "info": {
+    "name": "MovieLog 5주차 · 로컬 Spring Boot",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "닉네임 중복",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/nickname/수현"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"상태 코드\", () => pm.response.to.have.status(200));",
+              "pm.test(\"available\", () => pm.expect(pm.response.json().available).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "닉네임 사용 가능",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/nickname/새로운닉네임"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"상태 코드\", () => pm.response.to.have.status(200));",
+              "pm.test(\"available\", () => pm.expect(pm.response.json().available).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "이메일 중복",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/email/noco@example.com"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"상태 코드\", () => pm.response.to.have.status(200));",
+              "pm.test(\"available\", () => pm.expect(pm.response.json().available).to.eql(false));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "이메일 사용 가능",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/email/new@example.com"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"상태 코드\", () => pm.response.to.have.status(200));",
+              "pm.test(\"available\", () => pm.expect(pm.response.json().available).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "내 평점 최신순",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/1/ratings"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"상태 코드\", () => pm.response.to.have.status(200));",
+              "pm.test(\"최신순\", () => { const rows=pm.response.json(); pm.expect(rows.map(r => r.movieId)).to.eql([155,550]); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "평점 없는 회원",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/3/ratings"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"상태 코드\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "없는 회원",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/99999/ratings"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"상태 코드\", () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "잘못된 회원 ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/members/abc/ratings"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"상태 코드\", () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

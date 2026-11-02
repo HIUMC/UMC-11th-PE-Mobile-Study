@@ -36,6 +36,7 @@ void main() {
                   error: 'fake-test-secret',
                   response: Response(requestOptions: options, statusCode: 401),
                 ),
+                true,
               );
             } else {
               handler.resolve(

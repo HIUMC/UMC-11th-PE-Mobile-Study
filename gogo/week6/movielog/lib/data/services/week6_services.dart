@@ -2,6 +2,12 @@ import 'package:dio/dio.dart';
 
 import '../models/rating_dto.dart';
 
+// 로컬 Spring 서버는 빈 prefix, 제공된 워크북 서버는 /v5를 사용합니다.
+const _apiPrefix = String.fromEnvironment(
+  'MOVIELOG_API_PREFIX',
+  defaultValue: '/v5',
+);
+
 class MemberCheckService {
   MemberCheckService(this.dio);
   final Dio dio;
@@ -9,7 +15,7 @@ class MemberCheckService {
   Future<bool> checkEmail(String value) => _check('email', value);
   Future<bool> _check(String field, String value) async {
     final response = await dio.get<dynamic>(
-      '/v5/members/$field/${Uri.encodeComponent(value.trim())}',
+      '$_apiPrefix/members/$field/${Uri.encodeComponent(value.trim())}',
     );
     return (response.data as Map<String, dynamic>)['available'] as bool;
   }
@@ -19,7 +25,9 @@ class RatingApiService {
   RatingApiService(this.dio);
   final Dio dio;
   Future<List<RatingDto>> fetchMyRatings(int memberId) async {
-    final response = await dio.get<dynamic>('/v5/members/$memberId/ratings');
+    final response = await dio.get<dynamic>(
+      '$_apiPrefix/members/$memberId/ratings',
+    );
     return (response.data as List)
         .map((item) => RatingDto.fromJson(item as Map<String, dynamic>))
         .toList();

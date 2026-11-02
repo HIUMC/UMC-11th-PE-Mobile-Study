@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko"><meta charset="utf-8"><title>5주차 CORS 확인</title>
+<style>body{font:18px system-ui;max-width:900px;margin:50px auto;padding:20px;background:#f5f7fb;color:#17223b}button{padding:14px 20px;background:#285be7;color:white;border:0;border-radius:8px;font:inherit;cursor:pointer}pre{background:white;border:1px solid #ccd4e1;padding:20px;white-space:pre-wrap}small{color:#48556b}</style>
+<h1>5주차 · 내 Spring Boot 서버 확인</h1>
+<p>프론트: <b>http://localhost:5173</b><br>백엔드: <b>http://localhost:8080</b></p>
+<p>같은 버튼을 CORS 설정 전·후에 눌러 비교합니다.</p>
+<button id="run">조회 API 3개 호출</button><pre id="result">버튼을 눌러 주세요.</pre>
+<small>실패 시 개발자 도구 Console에서 브라우저의 CORS 오류를 확인하세요.</small>
+<script>
+document.querySelector('#run').onclick = async () => {
+ const result=document.querySelector('#result'); result.textContent='';
+ for(const path of ['/members/nickname/'+encodeURIComponent('수현'),'/members/email/noco@example.com','/members/1/ratings']) {
+   result.textContent += 'GET http://localhost:8080'+path+'\n';
+   try {
+     const response=await fetch('http://localhost:8080'+path);
+     const data=await response.json();
+     result.textContent += response.status+'\n'+JSON.stringify(data,null,2)+'\n\n';
+   } catch(error) {
+     console.error('API 요청 실패:',path,error);
+     result.textContent += '실패: '+error.message+' (Console에서 원인 확인)\n\n';
+   }
+ }
+};
+</script></html>
