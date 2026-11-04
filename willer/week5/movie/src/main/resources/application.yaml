@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: movie # 앱 이름. 로그에 표시됨
+
+  datasource: # DB 연결 정보
+    url: jdbc:mysql://localhost:3306/umc_movie # 영화 평점 서비스용 DB
+    username: root
+    password: ${DB_PASSWORD} # 실제 비밀번호는 IntelliJ 실행 설정의 환경변수로 넣어서 GitHub에 안 올라감
+
+  jpa:
+    hibernate:
+      ddl-auto: validate # 테이블은 SQL로 직접 만들었으니 엔티티와 구조가 맞는지 검사만 함
+    open-in-view: false # DB 연결을 트랜잭션 안에서만 씀

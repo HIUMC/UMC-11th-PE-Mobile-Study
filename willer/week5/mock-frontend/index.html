@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>CORS 확인용 간이 프론트</title>
+</head>
+<body>
+  <h1>CORS 확인</h1>
+  <button id="check">닉네임 중복 체크 요청</button>
+  <pre id="result">버튼을 눌러주세요</pre>
+
+  <script>
+    // 5173 포트 페이지에서 8080 서버로 요청함. 출처(포트)가 달라서 CORS 검사 대상
+    document.getElementById('check').addEventListener('click', async () => {
+      const result = document.getElementById('result');
+      try {
+        const response = await fetch(
+          `http://localhost:8080/members/nickname/${encodeURIComponent('수현')}` // 한글을 주소에 넣을 수 있게 인코딩
+        );
+        const data = await response.json();
+        result.textContent = JSON.stringify(data); // 성공하면 응답 JSON을 그대로 화면에 표시
+      } catch (error) {
+        result.textContent = '요청 실패: 개발자 도구 Console 확인'; // CORS로 막히면 응답을 못 읽어서 여기로 옴
+      }
+    });
+  </script>
+</body>
+</html>
