@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The INTERNET permission is required for development. Specifically,
+         the Flutter tool needs it to communicate with the running application
+         to allow setting breakpoints, to provide hot reload, etc.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 로컬 Spring 서버는 https가 아닌 http라서 debug 빌드에서만 http 요청을 허용함 -->
+    <application android:usesCleartextTraffic="true" />
+</manifest>

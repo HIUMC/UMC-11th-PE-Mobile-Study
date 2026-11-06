@@ -1,0 +1,37 @@
+plugins {
+	id 'java' // 자바 프로젝트로 빌드
+	id 'org.springframework.boot' version '3.5.0' // start.spring.io 기본값 4.x 대신 3.5.0으로 고정
+	id 'io.spring.dependency-management' version '1.1.7' // 스프링 부트 버전에 맞는 라이브러리 버전을 알아서 맞춰줌
+}
+
+group = 'com.umc'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21) // JDK 21로 컴파일
+	}
+}
+
+repositories {
+	mavenCentral() // 라이브러리를 내려받을 공식 저장소
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web' // REST API와 내장 톰캣. 8080 포트로 요청을 받음
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA(Hibernate)와 Spring Data Repository
+	implementation 'org.springframework.boot:spring-boot-starter-validation' // @NotBlank 같은 요청 검증
+	implementation 'org.springframework.security:spring-security-crypto' // bcrypt 해시 기능만 씀. starter-security를 넣으면 모든 API가 로그인으로 막힘
+	compileOnly 'org.projectlombok:lombok' // @Getter, @RequiredArgsConstructor 같은 반복 코드 자동 생성
+	runtimeOnly 'com.mysql:mysql-connector-j' // MySQL 드라이버
+	annotationProcessor 'org.projectlombok:lombok' // 컴파일할 때 Lombok 어노테이션을 실제 코드로 바꿔줌
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testCompileOnly 'org.projectlombok:lombok'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('test') {
+	useJUnitPlatform() // 테스트를 JUnit 5로 실행
+}
