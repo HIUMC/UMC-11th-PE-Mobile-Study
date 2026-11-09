@@ -1,0 +1,256 @@
+{
+  "info": {
+    "name": "6주차 Standard Mission",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "memberId",
+      "value": "4"
+    },
+    {
+      "key": "ratingId",
+      "value": "4"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 회원가입 201",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/members",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"mission6@example.com\",\n  \"nickname\": \"미션식스\",\n  \"password\": \"Study6!Demo\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+              "if(pm.response.code===201) { pm.collectionVariables.set(\"memberId\",pm.response.json().result.memberId); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 평점 등록 201",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/members/{{memberId}}/ratings",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"movieId\": 680,\n  \"score\": 5,\n  \"comment\": \"미션 인증 평점\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\",()=>pm.response.to.have.status(201));",
+              "if(pm.response.code===201) { pm.collectionVariables.set(\"ratingId\",pm.response.json().result); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 중복 평점 409",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/members/{{memberId}}/ratings",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"movieId\": 680,\n  \"score\": 5\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 409\",()=>pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 잘못된 별점 400",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8080/members/{{memberId}}/ratings",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"movieId\": 13,\n  \"score\": 6\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 400\",()=>pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 타인 수정 403",
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:8080/members/1/ratings/{{ratingId}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"score\": 3\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 403\",()=>pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 평점 수정 200",
+      "request": {
+        "method": "PATCH",
+        "url": "http://localhost:8080/members/{{memberId}}/ratings/{{ratingId}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"score\": 4,\n  \"comment\": \"수정한 후기\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\",()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 평점 삭제 204",
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:8080/members/{{memberId}}/ratings/{{ratingId}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 204\",()=>pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 없는 평점 404",
+      "request": {
+        "method": "DELETE",
+        "url": "http://localhost:8080/members/{{memberId}}/ratings/{{ratingId}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\",()=>pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
